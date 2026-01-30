@@ -32,6 +32,7 @@ import { randomUUID } from 'crypto';
 import { ApiResponseDto } from '../common/dtos/api-response.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UserStatus, DEFAULT_USER_STATUS } from '../users/enums/user-status.enum';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -39,7 +40,7 @@ export class AuthController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   /**
    * Login with email and password
@@ -94,7 +95,7 @@ export class AuthController {
     }
 
     // Check user status
-    if (user.status !== 'ACTIVE') {
+    if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Account is inactive');
     }
 
@@ -162,7 +163,7 @@ export class AuthController {
           email: dto.email,
           password_hash: passwordHash,
           full_name: dto.fullName,
-          status: 'ACTIVE',
+          status: DEFAULT_USER_STATUS,
         },
       });
 
