@@ -178,7 +178,7 @@ Create a `.env` file in the root directory with the following variables:
 # ============================================
 # Application
 # ============================================
-PORT=3001
+PORT=3000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:3000
 
@@ -213,7 +213,7 @@ RAG_SERVICE_URL=http://localhost:8000
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `PORT` | Server port | No | `3001` |
+| `PORT` | Server port | No | `3000` |
 | `NODE_ENV` | Environment (development/production) | No | `development` |
 | `FRONTEND_URL` | Frontend URL for CORS | No | `http://localhost:3000` |
 | `DATABASE_URL` | PostgreSQL connection string | **Yes** | - |
@@ -277,8 +277,8 @@ RAG_SERVICE_URL=http://localhost:8000
    ```
 
 The API will be available at:
-- **API**: `http://localhost:3001/api`
-- **Swagger Docs**: `http://localhost:3001/docs`
+- **API**: `http://localhost:3000/api`
+- **Swagger Docs**: `http://localhost:3000/docs`
 
 ### Available Scripts
 
@@ -316,7 +316,7 @@ npm run test:cov       # Run tests with coverage
 The API is fully documented using Swagger/OpenAPI. Access the interactive documentation at:
 
 ```
-http://localhost:3001/docs
+http://localhost:3000/docs
 ```
 
 The Swagger UI provides:
@@ -340,18 +340,6 @@ Content-Type: application/json
 }
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "User registered successfully",
-  "data": {
-    "userId": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "user@example.com"
-  }
-}
-```
-
 #### 2. Login
 
 ```http
@@ -364,26 +352,7 @@ Content-Type: application/json
 }
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Login successful",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "email": "user@example.com",
-      "fullName": "John Doe",
-      "roles": ["EMPLOYEE"],
-      "permissions": ["VIEW_DOCUMENTS", "QUERY_KNOWLEDGE"]
-    }
-  }
-}
-```
-
-**Note:** The `refreshToken` is also set as an HTTP-only cookie.
+**Response:** Returns access token, refresh token (also set as HTTP-only cookie), and user information with roles and permissions.
 
 #### 3. Using Access Token
 
@@ -403,16 +372,7 @@ POST /api/auth/refresh
 Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "accessToken": "new-access-token...",
-    "refreshToken": "new-refresh-token..."
-  }
-}
-```
+**Response:** Returns new access token and refresh token.
 
 #### 5. Get Current User
 
@@ -421,24 +381,7 @@ GET /api/auth/me
 Authorization: Bearer <access-token>
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "user@example.com",
-    "fullName": "John Doe",
-    "status": "ACTIVE",
-    "roles": ["EMPLOYEE"],
-    "permissions": ["VIEW_DOCUMENTS", "QUERY_KNOWLEDGE"],
-    "profile": {
-      "department": "Engineering",
-      "position": "Senior"
-    }
-  }
-}
-```
+**Response:** Returns current user information including roles, permissions, and profile details.
 
 #### 6. Logout
 
@@ -508,17 +451,7 @@ Authorization: Bearer <token>
 }
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Document created successfully",
-  "data": {
-    "documentId": "550e8400-e29b-41d4-a716-446655440000",
-    "status": "PROCESSING"
-  }
-}
-```
+**Response:** Returns document ID and status (PROCESSING).
 
 **Features:**
 - Transactional document creation
@@ -551,18 +484,7 @@ file: <binary>
 folder: documents (optional)
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "key": "documents/user-id/document_1234567890.pdf",
-    "fileName": "document_1234567890.pdf",
-    "size": 1024000,
-    "mimeType": "application/pdf"
-  }
-}
-```
+**Response:** Returns file key, name, size, and MIME type.
 
 **Features:**
 - File validation (type, size, name sanitization)
@@ -594,16 +516,7 @@ Authorization: Bearer <token>
 }
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "chatId": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "Leave Policy Discussion"
-  }
-}
-```
+**Response:** Returns chat ID and optional title.
 
 **Features:**
 - User can only access their own chats
@@ -632,25 +545,7 @@ Authorization: Bearer <token>
 }
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Message sent successfully",
-  "data": {
-    "userMessage": {
-      "messageId": "550e8400-e29b-41d4-a716-446655440001",
-      "role": "user",
-      "content": "What is the company leave policy?"
-    },
-    "assistantMessage": {
-      "messageId": "550e8400-e29b-41d4-a716-446655440002",
-      "role": "assistant",
-      "content": "According to company policy, employees are entitled to 12 days of annual leave..."
-    }
-  }
-}
-```
+**Response:** Returns both user message and assistant response with message IDs.
 
 **Features:**
 - Automatic RAG query when user sends message
@@ -768,91 +663,34 @@ All API responses follow a consistent format:
 
 ### Entity Relationship Diagram
 
-```
-┌─────────────┐
-│   users     │
-│─────────────│
-│ id (PK)     │
-│ email       │
-│ password    │
-│ full_name   │
-│ status      │
-└──────┬──────┘
-       │
-       ├─────────────────┐
-       │                 │
-┌──────▼──────┐   ┌──────▼──────┐
-│ user_roles  │   │user_profiles│
-│─────────────│   │──────────────│
-│ user_id (FK)│   │ user_id (PK) │
-│ role_id (FK)│   │ dept_id (FK) │
-└──────┬──────┘   │ position_id  │
-       │          └──────────────┘
-       │
-┌──────▼──────┐
-│   roles     │
-│─────────────│
-│ id (PK)     │
-│ name        │
-└──────┬──────┘
-       │
-       │
-┌──────▼──────────────┐
-│ role_permissions    │
-│─────────────────────│
-│ role_id (FK)        │
-│ permission_id (FK)  │
-└──────┬──────────────┘
-       │
-┌──────▼──────────────┐
-│  permissions        │
-│─────────────────────│
-│ id (PK)             │
-│ code                │
-│ description         │
-└─────────────────────┘
+![Database ERD](./docs/database-erd.png)
 
-┌─────────────┐
-│ documents   │
-│─────────────│
-│ id (PK)     │
-│ title       │
-│ file_path   │
-│ file_type   │
-│ status      │
-│ uploaded_by │
-└──────┬──────┘
-       │
-       │
-┌──────▼──────────────────┐
-│ document_access_rules   │
-│─────────────────────────│
-│ id (PK)                 │
-│ document_id (FK)         │
-│ role_id (FK)             │
-│ department_id (FK)       │
-│ position_id (FK)         │
-│ access_level             │
-└──────────────────────────┘
+*Note: Add your database ERD image to `docs/database-erd.png`*
 
-┌─────────────┐
-│   chats     │
-│─────────────│
-│ id (PK)     │
-│ user_id (FK)│
-│ title       │
-└──────┬──────┘
-       │
-       │
-┌──────▼──────┐
-│  messages   │
-│─────────────│
-│ id (PK)     │
-│ chat_id (FK)│
-│ role        │
-│ content     │
-└─────────────┘
-```
+### Database Overview
+
+The database consists of 13 main tables organized into the following domains:
+
+**Authentication & Authorization:**
+- `users` - User accounts
+- `roles` - System roles (ADMIN, EMPLOYEE)
+- `permissions` - System permissions
+- `role_permissions` - Role-permission mapping
+- `user_roles` - User-role mapping
+- `refresh_tokens` - Refresh token storage
+
+**Organization:**
+- `departments` - Organizational departments
+- `positions` - Job positions with hierarchy levels
+- `user_profiles` - Extended user information (department, position)
+
+**Documents:**
+- `documents` - Document metadata
+- `document_access_rules` - Document access control (OR logic)
+
+**Chat & Messages:**
+- `chats` - Chat sessions
+- `messages` - Chat messages (user and assistant)
 
 ### Core Tables
 
@@ -1158,26 +996,7 @@ npx prisma db seed
 tsx prisma/seed.ts
 ```
 
-### Seed Output
-
-```
-✅ Seed completed
-   - 10 permissions
-   - 2 roles
-   - 1 admin user
-   - 20 employee users
-   - 6 departments
-   - 10 positions
-   - 21 user profiles
-```
-
-### Why This Seeding Strategy?
-
-1. **Development**: Provides ready-to-use test data
-2. **Testing**: Consistent test environment
-3. **Demo**: Quick setup for demonstrations
-4. **Onboarding**: New developers can start immediately
-5. **Permissions**: Clear permission structure from the start
+The seed script provides ready-to-use test data for development, testing, and quick onboarding.
 
 ---
 
@@ -1198,40 +1017,11 @@ NestJS provides built-in exception classes:
 
 #### 2. **Global Exception Filter**
 
-All exceptions are caught and formatted consistently:
-
-```typescript
-// Example error response
-{
-  "status": "error",
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Email must be a valid email address"
-    }
-  ]
-}
-```
+All exceptions are caught and formatted consistently with a standard error response structure.
 
 #### 3. **Validation Errors**
 
-DTO validation errors are automatically formatted:
-
-```json
-{
-  "status": "error",
-  "message": "Validation failed",
-  "errors": [
-    {
-      "property": "email",
-      "constraints": {
-        "isEmail": "email must be an email"
-      }
-    }
-  ]
-}
-```
+DTO validation errors are automatically formatted with detailed field-level error messages.
 
 ### Logging
 
@@ -1255,67 +1045,17 @@ this.logger.error('Operation failed', error);
 this.logger.warn('Potential issue detected');
 ```
 
-#### Log Output
-
-```
-[Nest] 12345  - 01/15/2024, 10:30:00 AM     LOG [DocumentsService] Document created: uuid-123
-[Nest] 12345  - 01/15/2024, 10:30:01 AM   ERROR [RagServiceClient] Failed to query RAG service: Connection timeout
-```
-
 ### Error Scenarios
 
-#### 1. **Authentication Errors**
+#### Common Error Types
 
-```json
-// 401 Unauthorized
-{
-  "status": "error",
-  "message": "Unauthorized",
-  "errors": ["Invalid or expired token"]
-}
-```
+- **401 Unauthorized**: Invalid or expired token
+- **403 Forbidden**: Insufficient permissions
+- **400 Bad Request**: Validation errors with detailed field messages
+- **404 Not Found**: Resource not found
+- **500 Internal Server Error**: Server errors
 
-#### 2. **Permission Errors**
-
-```json
-// 403 Forbidden
-{
-  "status": "error",
-  "message": "Forbidden",
-  "errors": ["Insufficient permissions: UPLOAD_DOCUMENTS required"]
-}
-```
-
-#### 3. **Validation Errors**
-
-```json
-// 400 Bad Request
-{
-  "status": "error",
-  "message": "Validation failed",
-  "errors": [
-    {
-      "property": "filePath",
-      "constraints": {
-        "matches": "filePath must match /^s3:\\/\\// regular expression"
-      }
-    }
-  ]
-}
-```
-
-#### 4. **Not Found Errors**
-
-```json
-// 404 Not Found
-{
-  "status": "error",
-  "message": "Document not found",
-  "errors": []
-}
-```
-
-#### 5. **RAG Service Errors**
+#### RAG Service Errors
 
 When RAG service fails, the application:
 - Logs the error
@@ -1380,14 +1120,6 @@ npm run test:e2e
 npm run test:cov
 ```
 
-### Test Structure
-
-```
-test/
-├── app.e2e-spec.ts    # E2E tests
-└── jest-e2e.json      # E2E test configuration
-```
-
 ---
 
 ## 📦 Deployment
@@ -1431,7 +1163,7 @@ This project is proprietary and confidential.
 ## 🆘 Support
 
 For issues and questions:
-- Check Swagger documentation: `http://localhost:3001/docs`
+- Check Swagger documentation: `http://localhost:3000/docs`
 - Review logs for error details
 - Contact the development team
 
@@ -1465,4 +1197,4 @@ s3://bucket-name/documents/user-id/filename.pdf
 
 ---
 
-**Last Updated**: January 2025
+**Last Updated**: January 2026
