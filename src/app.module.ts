@@ -10,6 +10,7 @@ import { PermissionsModule } from './permissions/permission.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { PositionsModule } from './positions/positions.module';
 import { UserProfilesModule } from './user-profiles/user-profiles.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { UserProfilesModule } from './user-profiles/user-profiles.module';
     DepartmentsModule,
     PositionsModule,
     UserProfilesModule,
+    UploadsModule,
     PrismaModule,
   ],
   controllers: [AppController],

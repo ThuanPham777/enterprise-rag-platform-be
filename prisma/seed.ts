@@ -28,7 +28,9 @@ async function main() {
     { code: 'MANAGE_DEPARTMENTS', description: 'Manage departments' },
     { code: 'MANAGE_POSITIONS', description: 'Manage positions' },
     { code: 'MANAGE_USER_PROFILES', description: 'Manage user profiles' },
-    { code: 'UPLOAD_DOCUMENT', description: 'Upload documents' },
+    { code: 'UPLOAD_DOCUMENTS', description: 'Upload documents' },
+    { code: 'VIEW_DOCUMENTS', description: 'View documents' },
+    { code: 'DELETE_DOCUMENTS', description: 'Delete document' },
     { code: 'QUERY_KNOWLEDGE', description: 'Query internal knowledge' },
   ];
 
