@@ -1,9 +1,18 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { LoginRequestDto } from './dto/request/login-request.dto';
+import { RegisterRequestDto } from './dto/request/register-request.dto';
+import { RegisterResponseDto } from './dto/response/register-response.dto';
+import { MeResponseDto } from './dto/response/me-response.dto';
+import { UserStatus, DEFAULT_USER_STATUS } from '../users/enums/user-status.enum';
 
 @Injectable()
 export class AuthService {
@@ -11,7 +20,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
-  ) {}
+  ) { }
 
   // ===== TOKEN SIGNING =====
 
@@ -59,9 +68,9 @@ export class AuthService {
     // Calculate expiresAt from config
     const refreshExpiresAt = new Date(
       Date.now() +
-        this.parseExpiresToMs(
-          this.config.get<string>('JWT_REFRESH_EXPIRES') ?? '7d',
-        ),
+      this.parseExpiresToMs(
+        this.config.get<string>('JWT_REFRESH_EXPIRES') ?? '7d',
+      ),
     );
 
     // Store hashed refresh token in database (use generated `refresh_tokens` model and snake_case fields)
@@ -204,6 +213,147 @@ export class AuthService {
       where: { user_id: userId, revoked_at: null },
       data: { revoked_at: new Date() },
     });
+  }
+
+  // ===== AUTHENTICATION =====
+
+  async login(
+    dto: LoginRequestDto,
+    meta: { userAgent?: string; ipAddress?: string },
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // Find user by email
+    const user = await this.prisma.users.findUnique({
+      where: { email: dto.email },
+      include: {
+        user_roles: {
+          include: {
+            roles: {
+              include: {
+                role_permissions: { include: { permissions: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Validate credentials
+    if (!user || !(await bcrypt.compare(dto.password, user.password_hash))) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Check user status
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Account is inactive');
+    }
+
+    // Get user roles and permissions
+    const roles = user.user_roles.map((r) => r.roles.name);
+    const permissionsSet = new Set<string>();
+    for (const ur of user.user_roles) {
+      const rp = ur.roles.role_permissions || [];
+      for (const p of rp) {
+        if (p.permissions?.code) permissionsSet.add(p.permissions.code);
+      }
+    }
+    const permissions = Array.from(permissionsSet);
+
+    // Issue tokens
+    const { accessToken, refreshToken } = await this.issueTokens(
+      user.id,
+      roles,
+      permissions,
+      meta,
+    );
+
+    return { accessToken, refreshToken };
+  }
+
+  async register(dto: RegisterRequestDto): Promise<RegisterResponseDto> {
+    // Check if user already exists
+    const existingUser = await this.prisma.users.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already in use');
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    // Create user
+    try {
+      const user = await this.prisma.users.create({
+        data: {
+          id: randomUUID(),
+          email: dto.email,
+          password_hash: passwordHash,
+          full_name: dto.fullName,
+          status: DEFAULT_USER_STATUS,
+        },
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name ?? null,
+        status: user.status ?? DEFAULT_USER_STATUS,
+        createdAt: user.created_at ?? null,
+      };
+    } catch (err: any) {
+      // Handle unique constraint or other DB errors
+      if (err?.code === 'P2002' || /unique/i.test(err?.message || '')) {
+        throw new ConflictException('Email already in use');
+      }
+      throw err;
+    }
+  }
+
+  async getCurrentUser(userId: string): Promise<MeResponseDto> {
+    const user = await this.prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        created_at: true,
+        user_roles: {
+          select: {
+            roles: {
+              select: {
+                name: true,
+                role_permissions: {
+                  select: { permissions: { select: { code: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Aggregate permissions
+    const permissionsSet = new Set<string>();
+    for (const ur of user.user_roles) {
+      const perms = ur.roles.role_permissions || [];
+      for (const p of perms) {
+        if (p.permissions?.code) permissionsSet.add(p.permissions.code);
+      }
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      status: user.status ?? DEFAULT_USER_STATUS,
+      roles: user.user_roles.map((r) => r.roles.name),
+      permissions: Array.from(permissionsSet),
+      createdAt: user.created_at ?? null,
+    };
   }
 
   // ===== UTILS =====
