@@ -1,10 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserInfoDto } from './user-info.dto';
 
 export class MeResponseDto {
-  @ApiProperty({ example: 'success' })
-  status: 'success';
+  @ApiProperty({ example: 'uuid-string' })
+  id: string;
 
-  @ApiProperty({ type: UserInfoDto })
-  data: UserInfoDto;
+  @ApiProperty({ example: 'user@example.com' })
+  email: string;
+
+  @ApiProperty({ example: 'ACTIVE' })
+  status: string;
+
+  @ApiProperty({ example: ['admin', 'user'], type: [String] })
+  roles: string[];
+
+  @ApiProperty({
+    example: ['read:documents', 'write:documents'],
+    type: [String],
+  })
+  permissions: string[];
+
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
+  createdAt: Date | null;
 }

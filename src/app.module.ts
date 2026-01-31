@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -14,6 +15,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { DocumentsModule } from './documents/documents.module';
 import { RagModule } from './rag/rag.module';
 import { ChatsModule } from './chats/chats.module';
+import { AutoRefreshGuard } from './auth/guards/auto-refresh.guard';
 
 @Module({
   imports: [
@@ -34,6 +36,12 @@ import { ChatsModule } from './chats/chats.module';
     PrismaModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AutoRefreshGuard,
+    },
+  ],
 })
-export class AppModule { }
+export class AppModule {}
