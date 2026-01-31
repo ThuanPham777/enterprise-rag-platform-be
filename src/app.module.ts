@@ -7,6 +7,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permission.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { PositionsModule } from './positions/positions.module';
+import { UserProfilesModule } from './user-profiles/user-profiles.module';
 
 @Module({
   imports: [
@@ -17,6 +20,9 @@ import { PermissionsModule } from './permissions/permission.module';
     UsersModule,
     RolesModule,
     PermissionsModule,
+    DepartmentsModule,
+    PositionsModule,
+    UserProfilesModule,
     PrismaModule,
   ],
   controllers: [AppController],
