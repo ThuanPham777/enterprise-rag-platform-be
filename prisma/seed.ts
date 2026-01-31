@@ -66,9 +66,10 @@ async function main() {
     },
   });
 
-  // ===== ASSIGN ALL PERMISSIONS TO ADMIN =====
+  // ===== ASSIGN PERMISSIONS TO ROLES =====
   const allPermissions = await prisma.permissions.findMany();
 
+  // Admin gets ALL permissions
   for (const perm of allPermissions) {
     await prisma.role_permissions.upsert({
       where: {
@@ -83,6 +84,31 @@ async function main() {
         permission_id: perm.id,
       },
     });
+  }
+
+  // Employee gets basic permissions
+  const employeePermissions = [
+    'VIEW_DOCUMENTS',      // View documents they have access to
+    'QUERY_KNOWLEDGE',     // Query knowledge base via chat
+  ];
+
+  for (const permCode of employeePermissions) {
+    const perm = allPermissions.find((p) => p.code === permCode);
+    if (perm) {
+      await prisma.role_permissions.upsert({
+        where: {
+          role_id_permission_id: {
+            role_id: employeeRole.id,
+            permission_id: perm.id,
+          },
+        },
+        update: {},
+        create: {
+          role_id: employeeRole.id,
+          permission_id: perm.id,
+        },
+      });
+    }
   }
 
   // ===== CREATE ADMIN USER =====

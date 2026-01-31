@@ -18,6 +18,27 @@ export interface IngestRequest {
     chunking_strategy?: string;
 }
 
+export interface QueryRequest {
+    question: string;
+    user_context: {
+        user_id?: string;
+        department_ids: string[];
+        position_level: number;
+        role_ids: string[];
+    };
+    top_k?: number;
+}
+
+export interface QueryResponse {
+    answer: string;
+    sources: Array<{
+        content: string;
+        document_id: string;
+        score?: number;
+        chunk_index?: number;
+    }>;
+}
+
 
 @Injectable()
 export class RagServiceClient {
@@ -93,6 +114,37 @@ export class RagServiceClient {
             // Don't throw - we don't want to fail document creation if RAG fails
             // The document will remain in PROCESSING status
             // In production, you might want to implement retry logic or queue system
+        }
+    }
+
+    /**
+     * Query knowledge base with RAG
+     */
+    async query(request: QueryRequest): Promise<QueryResponse> {
+        try {
+            this.logger.log(
+                `Querying RAG service: ${request.question.substring(0, 50)}...`,
+            );
+
+            const response = await fetch(`${this.baseUrl}/api/v1/query`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(request),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                    `RAG service query failed: ${response.status} - ${errorText}`,
+                );
+            }
+
+            return await response.json();
+        } catch (error) {
+            this.logger.error('Failed to query RAG service:', error);
+            throw error;
         }
     }
 

@@ -63,6 +63,7 @@ model users {
   status         String?          @db.VarChar(20)
   created_at     DateTime?        @default(now()) @db.Timestamp(6)
   updated_at     DateTime?        @db.Timestamp(6)
+  chats          chats[]
   documents      documents[]
   refresh_tokens refresh_tokens[]
   user_profiles  user_profiles?
@@ -131,4 +132,22 @@ model documents {
   document_access_rules document_access_rules[]
   data_sources          data_sources?           @relation(fields: [source_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users                 users?                  @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model chats {
+  id         String     @id @db.Uuid
+  user_id    String     @db.Uuid
+  title      String?
+  created_at DateTime?  @default(now()) @db.Timestamp(6)
+  users      users      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  messages   messages[]
+}
+
+model messages {
+  id         String    @id @db.Uuid
+  chat_id    String    @db.Uuid
+  role       String?   @db.VarChar(10)
+  content    String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  chats      chats     @relation(fields: [chat_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

@@ -13,6 +13,7 @@ import { UserProfilesModule } from './user-profiles/user-profiles.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { DocumentsModule } from './documents/documents.module';
 import { RagModule } from './rag/rag.module';
+import { ChatsModule } from './chats/chats.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { RagModule } from './rag/rag.module';
     UploadsModule,
     RagModule,
     DocumentsModule,
+    ChatsModule,
     PrismaModule,
   ],
   controllers: [AppController],
