@@ -11,6 +11,8 @@ import { DepartmentsModule } from './departments/departments.module';
 import { PositionsModule } from './positions/positions.module';
 import { UserProfilesModule } from './user-profiles/user-profiles.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { DocumentsModule } from './documents/documents.module';
+import { RagModule } from './rag/rag.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { UploadsModule } from './uploads/uploads.module';
     PositionsModule,
     UserProfilesModule,
     UploadsModule,
+    RagModule,
+    DocumentsModule,
     PrismaModule,
   ],
   controllers: [AppController],

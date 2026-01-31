@@ -54,6 +54,20 @@ export interface UploadFileResponse {
     size: number;
 }
 
+export interface DownloadFileOptions {
+    /** File key/path in storage (can be S3 path like s3://bucket/key or just key) */
+    key: string;
+    /** Local file path to save the downloaded file */
+    localPath: string;
+}
+
+export interface DownloadFileResponse {
+    /** Local file path where the file was saved */
+    localPath: string;
+    /** File size in bytes */
+    size: number;
+}
+
 /**
  * Abstract storage provider interface
  */
@@ -86,4 +100,9 @@ export interface IStorageProvider {
      * Upload a file directly to storage
      */
     uploadFile(options: UploadFileOptions): Promise<UploadFileResponse>;
+
+    /**
+     * Download a file from storage to local path
+     */
+    downloadFile(options: DownloadFileOptions): Promise<DownloadFileResponse>;
 }

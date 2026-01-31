@@ -8,6 +8,8 @@ import {
     HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
     IStorageProvider,
     PresignedUrlOptions,
@@ -16,6 +18,8 @@ import {
     GetFileUrlOptions,
     UploadFileOptions,
     UploadFileResponse,
+    DownloadFileOptions,
+    DownloadFileResponse,
 } from '../interfaces/storage-provider.interface';
 
 @Injectable()
@@ -192,6 +196,69 @@ export class S3StorageProvider implements IStorageProvider {
         } catch (error) {
             this.logger.error('Failed to upload file', error);
             throw new Error('Failed to upload file to storage');
+        }
+    }
+
+    /**
+     * Download file from S3 to local path
+     * Supports both s3://bucket/key format and direct key format
+     */
+    async downloadFile(
+        options: DownloadFileOptions,
+    ): Promise<DownloadFileResponse> {
+        // Parse S3 path - support both s3://bucket/key and direct key
+        let key = options.key;
+        if (key.startsWith('s3://')) {
+            // Extract key from s3://bucket/key format
+            const parts = key.replace('s3://', '').split('/');
+            const bucket = parts[0];
+            key = parts.slice(1).join('/');
+
+            // Verify bucket matches configured bucket
+            if (bucket !== this.bucketName) {
+                throw new Error(
+                    `Bucket mismatch: expected ${this.bucketName}, got ${bucket}`,
+                );
+            }
+        }
+
+        const command = new GetObjectCommand({
+            Bucket: this.bucketName,
+            Key: key,
+        });
+
+        try {
+            // Ensure directory exists
+            const dir = path.dirname(options.localPath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            // Download file
+            const response = await this.s3Client.send(command);
+            const chunks: Uint8Array[] = [];
+
+            // Handle stream
+            if (response.Body) {
+                for await (const chunk of response.Body as any) {
+                    chunks.push(chunk);
+                }
+            }
+
+            const buffer = Buffer.concat(chunks);
+            fs.writeFileSync(options.localPath, buffer);
+
+            this.logger.log(
+                `File downloaded from S3: ${key} -> ${options.localPath}`,
+            );
+
+            return {
+                localPath: options.localPath,
+                size: buffer.length,
+            };
+        } catch (error) {
+            this.logger.error('Failed to download file from S3', error);
+            throw new Error('Failed to download file from storage');
         }
     }
 }
