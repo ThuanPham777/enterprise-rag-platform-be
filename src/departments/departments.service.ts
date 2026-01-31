@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { randomUUID } from 'crypto';
+import { generateUUID } from '../common/utils/uuid.util';
 import { CreateDepartmentRequestDto } from './dto/request/create-department-request.dto';
 import { UpdateDepartmentRequestDto } from './dto/request/update-department-request.dto';
 import { DepartmentResponseDto } from './dto/response/department-response.dto';
@@ -42,7 +42,7 @@ export class DepartmentsService {
   ): Promise<DepartmentResponseDto> {
     const department = await this.prisma.departments.create({
       data: {
-        id: randomUUID(),
+        id: generateUUID(),
         name: dto.name,
         description: dto.description,
       },

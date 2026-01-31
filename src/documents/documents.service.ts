@@ -3,15 +3,16 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { generateUUID } from '../common/utils/uuid.util';
 import { CreateDocumentRequestDto } from './dto/request/create-document-request.dto';
 import { DocumentResponseDto } from './dto/response/document-response.dto';
 import { DocumentStatus } from './enums/document-status.enum';
 import { RagServiceClient } from '../rag/services/rag-service.client';
 import { STORAGE_PROVIDER_TOKEN } from '../uploads/constants/storage-provider.token';
 import type { IStorageProvider } from '../uploads/interfaces/storage-provider.interface';
-import { Inject } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -55,7 +56,7 @@ export class DocumentsService {
       // 1. Create document
       const doc = await (tx as any).documents.create({
         data: {
-          id: this.generateUUID(),
+          id: generateUUID(),
           title: dto.title,
           file_path: dto.filePath,
           file_type: dto.fileType,
@@ -71,7 +72,7 @@ export class DocumentsService {
       if (dto.accessRules.roles) {
         for (const roleId of dto.accessRules.roles) {
           accessRulesData.push({
-            id: this.generateUUID(),
+            id: generateUUID(),
             document_id: doc.id,
             role_id: roleId,
             access_level: 'READ',
@@ -82,7 +83,7 @@ export class DocumentsService {
       if (dto.accessRules.departments) {
         for (const deptId of dto.accessRules.departments) {
           accessRulesData.push({
-            id: this.generateUUID(),
+            id: generateUUID(),
             document_id: doc.id,
             department_id: deptId,
             access_level: 'READ',
@@ -93,7 +94,7 @@ export class DocumentsService {
       if (dto.accessRules.positions) {
         for (const positionId of dto.accessRules.positions) {
           accessRulesData.push({
-            id: this.generateUUID(),
+            id: generateUUID(),
             document_id: doc.id,
             position_id: positionId,
             access_level: 'READ',
@@ -369,21 +370,4 @@ export class DocumentsService {
     };
   }
 
-  /**
-   * Generate UUID v4 using crypto
-   */
-  private generateUUID(): string {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    // Fallback for older Node.js versions
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-      /[xy]/g,
-      (c) => {
-        const r = (Math.random() * 16) | 0;
-        const v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-      },
-    );
-  }
 }

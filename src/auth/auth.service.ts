@@ -3,11 +3,11 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { generateUUID } from '../common/utils/uuid.util';
 import { LoginRequestDto } from './dto/request/login-request.dto';
 import { RegisterRequestDto } from './dto/request/register-request.dto';
 import { RegisterResponseDto } from './dto/response/register-response.dto';
@@ -76,7 +76,7 @@ export class AuthService {
     // Store hashed refresh token in database (use generated `refresh_tokens` model and snake_case fields)
     await this.prisma.refresh_tokens.create({
       data: {
-        id: randomUUID(),
+        id: generateUUID(),
         user_id: userId,
         token_hash: await bcrypt.hash(refreshToken, 12),
         expires_at: refreshExpiresAt,
@@ -286,7 +286,7 @@ export class AuthService {
     try {
       const user = await this.prisma.users.create({
         data: {
-          id: randomUUID(),
+          id: generateUUID(),
           email: dto.email,
           password_hash: passwordHash,
           full_name: dto.fullName,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { randomUUID } from 'crypto';
+import { generateUUID } from '../common/utils/uuid.util';
 import { CreatePermissionRequestDto } from './dto/request/create-permission-request.dto';
 import { CreatePermissionResponseDto } from './dto/response/create-permission-response.dto';
 
@@ -25,7 +25,7 @@ export class PermissionsService {
   ): Promise<CreatePermissionResponseDto> {
     const permission = await this.prisma.permissions.create({
       data: {
-        id: randomUUID(),
+        id: generateUUID(),
         code: dto.code.toUpperCase(),
         description: dto.description,
       },

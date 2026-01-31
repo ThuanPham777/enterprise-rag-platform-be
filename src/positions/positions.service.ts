@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { randomUUID } from 'crypto';
+import { generateUUID } from '../common/utils/uuid.util';
 import { CreatePositionRequestDto } from './dto/request/create-position-request.dto';
 import { UpdatePositionRequestDto } from './dto/request/update-position-request.dto';
 import { PositionResponseDto } from './dto/response/position-response.dto';
@@ -40,7 +40,7 @@ export class PositionsService {
   async create(dto: CreatePositionRequestDto): Promise<PositionResponseDto> {
     const position = await this.prisma.positions.create({
       data: {
-        id: randomUUID(),
+        id: generateUUID(),
         name: dto.name,
         level: dto.level,
       },
