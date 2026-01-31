@@ -37,11 +37,12 @@ model role_permissions {
 }
 
 model roles {
-  id               String             @id @db.Uuid
-  name             String             @unique @db.VarChar(50)
-  description      String?
-  role_permissions role_permissions[]
-  user_roles       user_roles[]
+  id                    String                  @id @db.Uuid
+  name                  String                  @unique @db.VarChar(50)
+  description           String?
+  document_access_rules document_access_rules[]
+  role_permissions      role_permissions[]
+  user_roles            user_roles[]
 }
 
 model user_roles {
@@ -62,23 +63,26 @@ model users {
   status         String?          @db.VarChar(20)
   created_at     DateTime?        @default(now()) @db.Timestamp(6)
   updated_at     DateTime?        @db.Timestamp(6)
+  documents      documents[]
   refresh_tokens refresh_tokens[]
   user_profiles  user_profiles?
   user_roles     user_roles[]
 }
 
 model departments {
-  id            String          @id @db.Uuid
-  name          String          @db.VarChar(100)
-  description   String?
-  user_profiles user_profiles[]
+  id                    String                  @id @db.Uuid
+  name                  String                  @db.VarChar(100)
+  description           String?
+  document_access_rules document_access_rules[]
+  user_profiles         user_profiles[]
 }
 
 model positions {
-  id            String          @id @db.Uuid
-  name          String          @db.VarChar(100)
-  level         Int
-  user_profiles user_profiles[]
+  id                    String                  @id @db.Uuid
+  name                  String                  @db.VarChar(100)
+  level                 Int
+  document_access_rules document_access_rules[]
+  user_profiles         user_profiles[]
 }
 
 model user_profiles {
@@ -89,4 +93,42 @@ model user_profiles {
   departments   departments? @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   positions     positions?   @relation(fields: [position_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users         users        @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model data_sources {
+  id         String      @id @db.Uuid
+  type       String      @db.VarChar(50)
+  name       String?
+  config     Json?
+  created_at DateTime?   @default(now()) @db.Timestamp(6)
+  documents  documents[]
+}
+
+model document_access_rules {
+  id            String       @id @db.Uuid
+  document_id   String       @db.Uuid
+  department_id String?      @db.Uuid
+  position_id   String?      @db.Uuid
+  role_id       String?      @db.Uuid
+  access_level  String?      @default("READ") @db.VarChar(20)
+  departments   departments? @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  documents     documents    @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  positions     positions?   @relation(fields: [position_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles         roles?       @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model documents {
+  id                    String                  @id @db.Uuid
+  title                 String
+  source_type           String?                 @db.VarChar(50)
+  file_type             String?                 @db.VarChar(50)
+  source_id             String?                 @db.Uuid
+  file_path             String?
+  uploaded_by           String?                 @db.Uuid
+  status                String?                 @db.VarChar(20)
+  created_at            DateTime?               @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?               @db.Timestamp(6)
+  document_access_rules document_access_rules[]
+  data_sources          data_sources?           @relation(fields: [source_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                 users?                  @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
