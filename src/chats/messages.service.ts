@@ -5,6 +5,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { generateUUID } from '../common/utils/uuid.util';
 import { CreateMessageRequestDto } from './dto/request/create-message-request.dto';
 import { MessageResponseDto } from './dto/response/message-response.dto';
 import { MessageRole } from './enums/message-role.enum';
@@ -48,7 +49,7 @@ export class MessagesService {
         // Create user message
         const userMessage = await (this.prisma as any).messages.create({
             data: {
-                id: this.generateUUID(),
+                id: generateUUID(),
                 chat_id: dto.chatId,
                 role: MessageRole.USER,
                 content: dto.content,
@@ -90,7 +91,7 @@ export class MessagesService {
         // Create assistant message
         const assistantMessage = await (this.prisma as any).messages.create({
             data: {
-                id: this.generateUUID(),
+                id: generateUUID(),
                 chat_id: dto.chatId,
                 role: MessageRole.ASSISTANT,
                 content: assistantContent,
@@ -190,21 +191,4 @@ export class MessagesService {
         };
     }
 
-    /**
-     * Generate UUID v4 using crypto
-     */
-    private generateUUID(): string {
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            return crypto.randomUUID();
-        }
-        // Fallback for older Node.js versions
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-            /[xy]/g,
-            (c) => {
-                const r = (Math.random() * 16) | 0;
-                const v = c === 'x' ? r : (r & 0x3) | 0x8;
-                return v.toString(16);
-            },
-        );
-    }
 }

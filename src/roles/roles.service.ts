@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { generateUUID } from '../common/utils/uuid.util';
 import { CreateRoleRequestDto } from './dto/request/create-role-request.dto';
 import { CreateRoleResponseDto } from './dto/response/create-role-response.dto';
 
@@ -25,7 +25,7 @@ export class RolesService {
   async create(dto: CreateRoleRequestDto): Promise<CreateRoleResponseDto> {
     const role = await this.prisma.roles.create({
       data: {
-        id: randomUUID(),
+        id: generateUUID(),
         name: dto.name,
         description: dto.description,
       },
