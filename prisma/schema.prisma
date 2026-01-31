@@ -63,5 +63,30 @@ model users {
   created_at     DateTime?        @default(now()) @db.Timestamp(6)
   updated_at     DateTime?        @db.Timestamp(6)
   refresh_tokens refresh_tokens[]
+  user_profiles  user_profiles?
   user_roles     user_roles[]
+}
+
+model departments {
+  id            String          @id @db.Uuid
+  name          String          @db.VarChar(100)
+  description   String?
+  user_profiles user_profiles[]
+}
+
+model positions {
+  id            String          @id @db.Uuid
+  name          String          @db.VarChar(100)
+  level         Int
+  user_profiles user_profiles[]
+}
+
+model user_profiles {
+  user_id       String       @id @db.Uuid
+  department_id String?      @db.Uuid
+  position_id   String?      @db.Uuid
+  joined_at     DateTime?    @db.Date
+  departments   departments? @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  positions     positions?   @relation(fields: [position_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users        @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
