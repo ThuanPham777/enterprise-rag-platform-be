@@ -32,6 +32,13 @@ async function main() {
     { code: 'VIEW_DOCUMENTS', description: 'View documents' },
     { code: 'DELETE_DOCUMENTS', description: 'Delete document' },
     { code: 'QUERY_KNOWLEDGE', description: 'Query internal knowledge' },
+    { code: 'MANAGE_DATA_SOURCES', description: 'Manage data sources' },
+    { code: 'VIEW_ANALYTICS', description: 'View analytics and query logs' },
+    { code: 'VIEW_SYSTEM_LOGS', description: 'View system logs' },
+    {
+      code: 'MANAGE_SYSTEM',
+      description: 'Manage system settings and cleanup',
+    },
   ];
 
   for (const p of permissions) {
@@ -88,8 +95,8 @@ async function main() {
 
   // Employee gets basic permissions
   const employeePermissions = [
-    'VIEW_DOCUMENTS',      // View documents they have access to
-    'QUERY_KNOWLEDGE',     // Query knowledge base via chat
+    'VIEW_DOCUMENTS', // View documents they have access to
+    'QUERY_KNOWLEDGE', // Query knowledge base via chat
   ];
 
   for (const permCode of employeePermissions) {
@@ -143,7 +150,10 @@ async function main() {
 
   // ===== DEPARTMENTS =====
   const departments = [
-    { name: 'Engineering', description: 'Software development and engineering' },
+    {
+      name: 'Engineering',
+      description: 'Software development and engineering',
+    },
     { name: 'Product', description: 'Product management and strategy' },
     { name: 'Sales', description: 'Sales and business development' },
     { name: 'Marketing', description: 'Marketing and communications' },
@@ -151,7 +161,11 @@ async function main() {
     { name: 'Finance', description: 'Finance and accounting' },
   ];
 
-  const createdDepartments: Array<{ id: string; name: string; description: string | null }> = [];
+  const createdDepartments: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+  }> = [];
   for (const dept of departments) {
     // Check if department exists by name
     const existing = await prisma.departments.findFirst({
@@ -186,7 +200,8 @@ async function main() {
     { name: 'VP', level: 8 },
   ];
 
-  const createdPositions: Array<{ id: string; name: string; level: number }> = [];
+  const createdPositions: Array<{ id: string; name: string; level: number }> =
+    [];
   for (const pos of positions) {
     // Check if position exists by name
     const existing = await prisma.positions.findFirst({
@@ -208,7 +223,9 @@ async function main() {
   }
 
   // ===== CREATE USER PROFILE FOR ADMIN =====
-  const engineeringDept = createdDepartments.find((d) => d.name === 'Engineering');
+  const engineeringDept = createdDepartments.find(
+    (d) => d.name === 'Engineering',
+  );
   const directorPosition = createdPositions.find((p) => p.name === 'Director');
 
   if (engineeringDept && directorPosition) {
@@ -227,36 +244,156 @@ async function main() {
   // ===== CREATE EMPLOYEE USERS =====
   const employeeUsers = [
     // Engineering Department
-    { email: 'john.doe@company.com', fullName: 'John Doe', dept: 'Engineering', position: 'Senior', joinedDate: '2023-03-15' },
-    { email: 'jane.smith@company.com', fullName: 'Jane Smith', dept: 'Engineering', position: 'Mid-level', joinedDate: '2023-06-01' },
-    { email: 'mike.johnson@company.com', fullName: 'Mike Johnson', dept: 'Engineering', position: 'Lead', joinedDate: '2022-09-10' },
-    { email: 'sarah.williams@company.com', fullName: 'Sarah Williams', dept: 'Engineering', position: 'Junior', joinedDate: '2024-01-20' },
-    { email: 'david.brown@company.com', fullName: 'David Brown', dept: 'Engineering', position: 'Principal', joinedDate: '2021-11-05' },
-    { email: 'emily.davis@company.com', fullName: 'Emily Davis', dept: 'Engineering', position: 'Senior', joinedDate: '2023-02-14' },
+    {
+      email: 'john.doe@company.com',
+      fullName: 'John Doe',
+      dept: 'Engineering',
+      position: 'Senior',
+      joinedDate: '2023-03-15',
+    },
+    {
+      email: 'jane.smith@company.com',
+      fullName: 'Jane Smith',
+      dept: 'Engineering',
+      position: 'Mid-level',
+      joinedDate: '2023-06-01',
+    },
+    {
+      email: 'mike.johnson@company.com',
+      fullName: 'Mike Johnson',
+      dept: 'Engineering',
+      position: 'Lead',
+      joinedDate: '2022-09-10',
+    },
+    {
+      email: 'sarah.williams@company.com',
+      fullName: 'Sarah Williams',
+      dept: 'Engineering',
+      position: 'Junior',
+      joinedDate: '2024-01-20',
+    },
+    {
+      email: 'david.brown@company.com',
+      fullName: 'David Brown',
+      dept: 'Engineering',
+      position: 'Principal',
+      joinedDate: '2021-11-05',
+    },
+    {
+      email: 'emily.davis@company.com',
+      fullName: 'Emily Davis',
+      dept: 'Engineering',
+      position: 'Senior',
+      joinedDate: '2023-02-14',
+    },
 
     // Product Department
-    { email: 'chris.miller@company.com', fullName: 'Chris Miller', dept: 'Product', position: 'Manager', joinedDate: '2022-05-15' },
-    { email: 'lisa.wilson@company.com', fullName: 'Lisa Wilson', dept: 'Product', position: 'Senior', joinedDate: '2023-07-22' },
-    { email: 'robert.moore@company.com', fullName: 'Robert Moore', dept: 'Product', position: 'Mid-level', joinedDate: '2023-10-08' },
+    {
+      email: 'chris.miller@company.com',
+      fullName: 'Chris Miller',
+      dept: 'Product',
+      position: 'Manager',
+      joinedDate: '2022-05-15',
+    },
+    {
+      email: 'lisa.wilson@company.com',
+      fullName: 'Lisa Wilson',
+      dept: 'Product',
+      position: 'Senior',
+      joinedDate: '2023-07-22',
+    },
+    {
+      email: 'robert.moore@company.com',
+      fullName: 'Robert Moore',
+      dept: 'Product',
+      position: 'Mid-level',
+      joinedDate: '2023-10-08',
+    },
 
     // Sales Department
-    { email: 'amanda.taylor@company.com', fullName: 'Amanda Taylor', dept: 'Sales', position: 'Senior Manager', joinedDate: '2021-12-01' },
-    { email: 'james.anderson@company.com', fullName: 'James Anderson', dept: 'Sales', position: 'Manager', joinedDate: '2022-08-20' },
-    { email: 'jennifer.thomas@company.com', fullName: 'Jennifer Thomas', dept: 'Sales', position: 'Mid-level', joinedDate: '2023-09-12' },
-    { email: 'william.jackson@company.com', fullName: 'William Jackson', dept: 'Sales', position: 'Junior', joinedDate: '2024-02-01' },
+    {
+      email: 'amanda.taylor@company.com',
+      fullName: 'Amanda Taylor',
+      dept: 'Sales',
+      position: 'Senior Manager',
+      joinedDate: '2021-12-01',
+    },
+    {
+      email: 'james.anderson@company.com',
+      fullName: 'James Anderson',
+      dept: 'Sales',
+      position: 'Manager',
+      joinedDate: '2022-08-20',
+    },
+    {
+      email: 'jennifer.thomas@company.com',
+      fullName: 'Jennifer Thomas',
+      dept: 'Sales',
+      position: 'Mid-level',
+      joinedDate: '2023-09-12',
+    },
+    {
+      email: 'william.jackson@company.com',
+      fullName: 'William Jackson',
+      dept: 'Sales',
+      position: 'Junior',
+      joinedDate: '2024-02-01',
+    },
 
     // Marketing Department
-    { email: 'patricia.white@company.com', fullName: 'Patricia White', dept: 'Marketing', position: 'Manager', joinedDate: '2022-04-10' },
-    { email: 'michael.harris@company.com', fullName: 'Michael Harris', dept: 'Marketing', position: 'Senior', joinedDate: '2023-01-18' },
-    { email: 'linda.martin@company.com', fullName: 'Linda Martin', dept: 'Marketing', position: 'Mid-level', joinedDate: '2023-08-30' },
+    {
+      email: 'patricia.white@company.com',
+      fullName: 'Patricia White',
+      dept: 'Marketing',
+      position: 'Manager',
+      joinedDate: '2022-04-10',
+    },
+    {
+      email: 'michael.harris@company.com',
+      fullName: 'Michael Harris',
+      dept: 'Marketing',
+      position: 'Senior',
+      joinedDate: '2023-01-18',
+    },
+    {
+      email: 'linda.martin@company.com',
+      fullName: 'Linda Martin',
+      dept: 'Marketing',
+      position: 'Mid-level',
+      joinedDate: '2023-08-30',
+    },
 
     // HR Department
-    { email: 'richard.thompson@company.com', fullName: 'Richard Thompson', dept: 'HR', position: 'Manager', joinedDate: '2022-06-25' },
-    { email: 'susan.garcia@company.com', fullName: 'Susan Garcia', dept: 'HR', position: 'Senior', joinedDate: '2023-04-05' },
+    {
+      email: 'richard.thompson@company.com',
+      fullName: 'Richard Thompson',
+      dept: 'HR',
+      position: 'Manager',
+      joinedDate: '2022-06-25',
+    },
+    {
+      email: 'susan.garcia@company.com',
+      fullName: 'Susan Garcia',
+      dept: 'HR',
+      position: 'Senior',
+      joinedDate: '2023-04-05',
+    },
 
     // Finance Department
-    { email: 'joseph.martinez@company.com', fullName: 'Joseph Martinez', dept: 'Finance', position: 'Senior Manager', joinedDate: '2021-10-15' },
-    { email: 'nancy.robinson@company.com', fullName: 'Nancy Robinson', dept: 'Finance', position: 'Manager', joinedDate: '2022-11-12' },
+    {
+      email: 'joseph.martinez@company.com',
+      fullName: 'Joseph Martinez',
+      dept: 'Finance',
+      position: 'Senior Manager',
+      joinedDate: '2021-10-15',
+    },
+    {
+      email: 'nancy.robinson@company.com',
+      fullName: 'Nancy Robinson',
+      dept: 'Finance',
+      position: 'Manager',
+      joinedDate: '2022-11-12',
+    },
   ];
 
   const createdEmployeeUsers: Array<{ id: string; email: string }> = [];

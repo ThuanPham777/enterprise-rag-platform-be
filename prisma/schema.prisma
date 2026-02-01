@@ -65,6 +65,7 @@ model users {
   updated_at     DateTime?        @db.Timestamp(6)
   chats          chats[]
   documents      documents[]
+  query_logs     query_logs[]
   refresh_tokens refresh_tokens[]
   user_profiles  user_profiles?
   user_roles     user_roles[]
@@ -130,8 +131,11 @@ model documents {
   created_at            DateTime?               @default(now()) @db.Timestamp(6)
   updated_at            DateTime?               @db.Timestamp(6)
   document_access_rules document_access_rules[]
+  document_chunks       document_chunks[]
   data_sources          data_sources?           @relation(fields: [source_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users                 users?                  @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  embedding_jobs        embedding_jobs[]
+  qa_sources            qa_sources[]            @ignore
 }
 
 model chats {
@@ -144,10 +148,63 @@ model chats {
 }
 
 model messages {
-  id         String    @id @db.Uuid
-  chat_id    String    @db.Uuid
-  role       String?   @db.VarChar(10)
+  id         String       @id @db.Uuid
+  chat_id    String       @db.Uuid
+  role       String?      @db.VarChar(10)
   content    String?
+  created_at DateTime?    @default(now()) @db.Timestamp(6)
+  chats      chats        @relation(fields: [chat_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  qa_sources qa_sources[] @ignore
+}
+
+model document_chunks {
+  id          String       @id @db.Uuid
+  document_id String       @db.Uuid
+  chunk_index Int?
+  content     String?
+  token_count Int?
+  vector_id   String?
+  created_at  DateTime?    @default(now()) @db.Timestamp(6)
+  documents   documents    @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  qa_sources  qa_sources[] @ignore
+}
+
+model embedding_jobs {
+  id            String    @id @db.Uuid
+  document_id   String    @db.Uuid
+  status        String?   @db.VarChar(20)
+  error_message String?
+  started_at    DateTime? @db.Timestamp(6)
+  finished_at   DateTime? @db.Timestamp(6)
+  documents     documents @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model qa_sources {
+  message_id      String          @db.Uuid
+  document_id     String          @db.Uuid
+  chunk_id        String          @db.Uuid
+  score           Float?
+  document_chunks document_chunks @relation(fields: [chunk_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  documents       documents       @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  messages        messages        @relation(fields: [message_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@ignore
+}
+
+model query_logs {
+  id               String    @id @db.Uuid
+  user_id          String?   @db.Uuid
+  question         String?
+  response_time_ms Int?
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  users            users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model system_logs {
+  id         String    @id @db.Uuid
+  level      String?   @db.VarChar(10)
+  message    String?
+  metadata   Json?
   created_at DateTime? @default(now()) @db.Timestamp(6)
-  chats      chats     @relation(fields: [chat_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
