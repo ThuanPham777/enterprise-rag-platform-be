@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Param,
   Body,
@@ -25,6 +26,7 @@ import { Permissions } from '../auth/decorators/permissions.decorator';
 import { ApiResponseDto } from '../common/dtos/api-response.dto';
 import { ErrorResponseDto } from '../common/dtos/error-response.dto';
 import { CreateChatRequestDto } from './dto/request/create-chat-request.dto';
+import { UpdateChatRequestDto } from './dto/request/update-chat-request.dto';
 import { CreateChatResponseDto } from './dto/response/create-chat-response.dto';
 import { ChatResponseDto } from './dto/response/chat-response.dto';
 import type { Request } from 'express';
@@ -80,7 +82,9 @@ export class ChatsController {
     description: 'Unauthorized',
     type: ErrorResponseDto,
   })
-  async getChats(@Req() req: Request): Promise<ApiResponseDto<ChatResponseDto[]>> {
+  async getChats(
+    @Req() req: Request,
+  ): Promise<ApiResponseDto<ChatResponseDto[]>> {
     const userId = (req as any).user.userId;
     const chats = await this.chatsService.findAll(userId);
     return ApiResponseDto.success(chats);
@@ -120,6 +124,44 @@ export class ChatsController {
     const userId = (req as any).user.userId;
     const chat = await this.chatsService.findOne(id, userId);
     return ApiResponseDto.success(chat);
+  }
+
+  @Permissions('QUERY_KNOWLEDGE')
+  @Put(':id')
+  @ApiOperation({
+    summary: 'Update chat',
+    description: 'Update chat title (only if owned by user)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Chat ID',
+    type: String,
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiBody({ type: UpdateChatRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat updated successfully',
+    type: ChatResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Chat not found',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
+  })
+  async updateChat(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() dto: UpdateChatRequestDto,
+  ): Promise<ApiResponseDto<ChatResponseDto>> {
+    const userId = (req as any).user.userId;
+    const chat = await this.chatsService.update(id, userId, dto);
+    return ApiResponseDto.success(chat, 'Chat updated successfully');
   }
 
   @Permissions('QUERY_KNOWLEDGE')

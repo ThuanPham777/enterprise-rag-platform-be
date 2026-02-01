@@ -1,18 +1,15 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { generateUUID } from '../common/utils/uuid.util';
 import { CreateChatRequestDto } from './dto/request/create-chat-request.dto';
+import { UpdateChatRequestDto } from './dto/request/update-chat-request.dto';
 import { ChatResponseDto } from './dto/response/chat-response.dto';
 
 @Injectable()
 export class ChatsService {
   private readonly logger = new Logger(ChatsService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Create a new chat
@@ -121,4 +118,47 @@ export class ChatsService {
     this.logger.log(`Chat deleted: ${id}`);
   }
 
+  /**
+   * Update chat (title)
+   */
+  async update(
+    id: string,
+    userId: string,
+    dto: UpdateChatRequestDto,
+  ): Promise<ChatResponseDto> {
+    const chat = await (this.prisma as any).chats.findUnique({
+      where: { id },
+    });
+
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+
+    // Verify ownership
+    if (chat.user_id !== userId) {
+      throw new NotFoundException('Chat not found');
+    }
+
+    const updated = await (this.prisma as any).chats.update({
+      where: { id },
+      data: {
+        title: dto.title,
+      },
+      include: {
+        _count: {
+          select: { messages: true },
+        },
+      },
+    });
+
+    this.logger.log(`Chat updated: ${id}`);
+
+    return {
+      id: updated.id,
+      userId: updated.user_id,
+      title: updated.title || undefined,
+      createdAt: updated.created_at || undefined,
+      messageCount: updated._count?.messages || 0,
+    };
+  }
 }
