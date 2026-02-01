@@ -1,4 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+class PermissionDto {
+  @ApiProperty({ example: 'uuid-string' })
+  id: string;
+
+  @ApiProperty({ example: 'MANAGE_USERS' })
+  code: string;
+
+  @ApiProperty({ example: 'Permission to manage users' })
+  description: string;
+}
 
 export class CreateRoleResponseDto {
   @ApiProperty({ example: 'uuid-string' })
@@ -9,4 +20,7 @@ export class CreateRoleResponseDto {
 
   @ApiProperty({ example: 'Role with all permissions' })
   description: string;
+
+  @ApiPropertyOptional({ type: [PermissionDto] })
+  permissions?: PermissionDto[];
 }
