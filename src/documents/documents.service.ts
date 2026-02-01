@@ -8,11 +8,13 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { generateUUID } from '../common/utils/uuid.util';
 import { CreateDocumentRequestDto } from './dto/request/create-document-request.dto';
+import { UpdateDocumentRequestDto } from './dto/request/update-document-request.dto';
 import { DocumentResponseDto } from './dto/response/document-response.dto';
 import { DocumentStatus } from './enums/document-status.enum';
 import { RagServiceClient } from '../rag/services/rag-service.client';
 import { STORAGE_PROVIDER_TOKEN } from '../uploads/constants/storage-provider.token';
 import type { IStorageProvider } from '../uploads/interfaces/storage-provider.interface';
+import { EmbeddingJobStatus } from '../embedding-jobs/enums/embedding-job-status.enum';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -26,7 +28,7 @@ export class DocumentsService {
     private ragServiceClient: RagServiceClient,
     @Inject(STORAGE_PROVIDER_TOKEN)
     private storageProvider: IStorageProvider,
-  ) { }
+  ) {}
 
   /**
    * Create a new document with access rules (transaction)
@@ -62,7 +64,8 @@ export class DocumentsService {
           file_type: dto.fileType,
           status: DocumentStatus.PROCESSING,
           uploaded_by: userId,
-          source_type: 'UPLOAD', // Default source type
+          source_type: dto.sourceId ? 'EXTERNAL' : 'UPLOAD', // External if from data source
+          source_id: dto.sourceId || null, // Link to data_sources for traceability
         },
       });
 
@@ -186,6 +189,16 @@ export class DocumentsService {
       where: { document_id: id },
     });
 
+    // Delete embedding jobs
+    await (this.prisma as any).embedding_jobs.deleteMany({
+      where: { document_id: id },
+    });
+
+    // Delete document chunks
+    await (this.prisma as any).document_chunks.deleteMany({
+      where: { document_id: id },
+    });
+
     // Delete document from database
     await (this.prisma as any).documents.delete({
       where: { id },
@@ -202,6 +215,153 @@ export class DocumentsService {
     });
 
     this.logger.log(`Document deleted: ${id}`);
+  }
+
+  /**
+   * Update document (title and/or access rules)
+   */
+  async update(
+    id: string,
+    dto: UpdateDocumentRequestDto,
+  ): Promise<DocumentResponseDto> {
+    const document = await (this.prisma as any).documents.findUnique({
+      where: { id },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
+    // Validate access rules if provided
+    if (dto.accessRules) {
+      const hasRoles =
+        dto.accessRules.roles && dto.accessRules.roles.length > 0;
+      const hasDepartments =
+        dto.accessRules.departments && dto.accessRules.departments.length > 0;
+      const hasPositions =
+        dto.accessRules.positions && dto.accessRules.positions.length > 0;
+
+      if (hasRoles || hasDepartments || hasPositions) {
+        await this.validateAccessRules(dto.accessRules);
+      }
+    }
+
+    // Use transaction to ensure atomicity
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // 1. Update document title if provided
+      const updatedDoc = await (tx as any).documents.update({
+        where: { id },
+        data: {
+          title: dto.title || undefined,
+          updated_at: new Date(),
+        },
+      });
+
+      // 2. Update access rules if provided
+      if (dto.accessRules) {
+        // Delete existing access rules
+        await (tx as any).document_access_rules.deleteMany({
+          where: { document_id: id },
+        });
+
+        // Create new access rules
+        const accessRulesData: any[] = [];
+
+        if (dto.accessRules.roles) {
+          for (const roleId of dto.accessRules.roles) {
+            accessRulesData.push({
+              id: generateUUID(),
+              document_id: id,
+              role_id: roleId,
+              access_level: 'READ',
+            });
+          }
+        }
+
+        if (dto.accessRules.departments) {
+          for (const deptId of dto.accessRules.departments) {
+            accessRulesData.push({
+              id: generateUUID(),
+              document_id: id,
+              department_id: deptId,
+              access_level: 'READ',
+            });
+          }
+        }
+
+        if (dto.accessRules.positions) {
+          for (const positionId of dto.accessRules.positions) {
+            accessRulesData.push({
+              id: generateUUID(),
+              document_id: id,
+              position_id: positionId,
+              access_level: 'READ',
+            });
+          }
+        }
+
+        if (accessRulesData.length > 0) {
+          await (tx as any).document_access_rules.createMany({
+            data: accessRulesData,
+          });
+        }
+      }
+
+      // Fetch updated document with access rules
+      return await (tx as any).documents.findUnique({
+        where: { id },
+        include: {
+          document_access_rules: {
+            include: {
+              roles: true,
+              departments: true,
+              positions: true,
+            },
+          },
+        },
+      });
+    });
+
+    this.logger.log(`Document updated: ${id}`);
+
+    return this.mapToResponseDto(updated);
+  }
+
+  /**
+   * Update document status
+   */
+  async updateStatus(
+    id: string,
+    status: DocumentStatus,
+  ): Promise<DocumentResponseDto> {
+    const document = await (this.prisma as any).documents.findUnique({
+      where: { id },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
+    const updated = await (this.prisma as any).documents.update({
+      where: { id },
+      data: {
+        status,
+        updated_at: new Date(),
+      },
+      include: {
+        document_access_rules: {
+          include: {
+            roles: true,
+            departments: true,
+            positions: true,
+          },
+        },
+      },
+    });
+
+    this.logger.log(`Document ${id} status updated to ${status}`);
+
+    return this.mapToResponseDto(updated);
   }
 
   /**
@@ -260,6 +420,21 @@ export class DocumentsService {
     documentId: string,
     dto: CreateDocumentRequestDto,
   ): Promise<void> {
+    // Create embedding job to track the ingestion
+    const embeddingJobId = generateUUID();
+    await this.prisma.embedding_jobs.create({
+      data: {
+        id: embeddingJobId,
+        document_id: documentId,
+        status: EmbeddingJobStatus.PENDING,
+        started_at: new Date(),
+      },
+    });
+
+    this.logger.log(
+      `Created embedding job ${embeddingJobId} for document ${documentId}`,
+    );
+
     // Extract department IDs, role IDs, and position IDs from access rules
     const departmentIds = dto.accessRules.departments || [];
     const roleIds = dto.accessRules.roles || [];
@@ -332,7 +507,10 @@ export class DocumentsService {
               this.logger.log(`Cleaned up temp file: ${localFilePath}`);
             }
           } catch (error) {
-            this.logger.warn(`Failed to cleanup temp file: ${localFilePath}`, error);
+            this.logger.warn(
+              `Failed to cleanup temp file: ${localFilePath}`,
+              error,
+            );
           }
         }, 60000); // Cleanup after 1 minute
       }
@@ -342,7 +520,10 @@ export class DocumentsService {
         try {
           fs.unlinkSync(localFilePath);
         } catch (cleanupError) {
-          this.logger.warn(`Failed to cleanup temp file on error`, cleanupError);
+          this.logger.warn(
+            `Failed to cleanup temp file on error`,
+            cleanupError,
+          );
         }
       }
       throw error;
@@ -369,5 +550,4 @@ export class DocumentsService {
       updatedAt: document.updated_at || undefined,
     };
   }
-
 }

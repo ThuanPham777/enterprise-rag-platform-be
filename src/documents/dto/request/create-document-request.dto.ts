@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -7,6 +7,8 @@ import {
   ValidateNested,
   IsArray,
   Matches,
+  IsOptional,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { FileType } from '../../enums/file-type.enum';
@@ -78,4 +80,22 @@ export class CreateDocumentRequestDto {
   @Type(() => AccessRulesDto)
   @HasAtLeastOneAccessRule()
   accessRules: AccessRulesDto;
+
+  @ApiPropertyOptional({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description:
+      'Source ID linking to external knowledge source (Notion, Slack, etc.). Optional for manual uploads.',
+  })
+  @IsUUID()
+  @IsOptional()
+  sourceId?: string;
+
+  @ApiPropertyOptional({
+    example: { notionPageId: 'abc123', lastModified: '2025-01-15T10:00:00Z' },
+    description:
+      'Metadata from the external source for tracking and deduplication',
+  })
+  @IsObject()
+  @IsOptional()
+  sourceMetadata?: Record<string, any>;
 }
