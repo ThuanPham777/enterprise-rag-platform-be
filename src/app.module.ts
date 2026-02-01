@@ -15,6 +15,10 @@ import { UploadsModule } from './uploads/uploads.module';
 import { DocumentsModule } from './documents/documents.module';
 import { RagModule } from './rag/rag.module';
 import { ChatsModule } from './chats/chats.module';
+import { DataSourcesModule } from './data-sources/data-sources.module';
+import { EmbeddingJobsModule } from './embedding-jobs/embedding-jobs.module';
+import { QueryLogsModule } from './query-logs/query-logs.module';
+import { SystemLogsModule } from './system-logs/system-logs.module';
 import { AutoRefreshGuard } from './auth/guards/auto-refresh.guard';
 
 @Module({
@@ -33,6 +37,10 @@ import { AutoRefreshGuard } from './auth/guards/auto-refresh.guard';
     RagModule,
     DocumentsModule,
     ChatsModule,
+    DataSourcesModule,
+    EmbeddingJobsModule,
+    QueryLogsModule,
+    SystemLogsModule,
     PrismaModule,
   ],
   controllers: [AppController],
